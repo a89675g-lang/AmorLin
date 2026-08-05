@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#5e9f3a" />
-  <title>皮克敏蘑菇地圖</title>
+  <title>牛肉麵地圖</title>
 
   <link
     rel="stylesheet"
@@ -115,6 +115,55 @@
       background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:13px;
       padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:var(--shadow);z-index:850
     }
+
+    .connection-box{border:1px solid var(--border);background:#f7faf5;border-radius:14px;padding:12px;margin-bottom:12px}
+    .connection-state{font-weight:900;margin-bottom:4px}
+    .connection-help{font-size:12px;color:var(--muted);line-height:1.55}
+    .online-dot,.offline-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+    .online-dot{background:#42a846}.offline-dot{background:#d89a25}
+    .postcard-panel{max-height:94vh}
+    .postcard-stage{
+      width:min(100%,420px);aspect-ratio:3/4;margin:8px auto 14px;
+      border-radius:24px;overflow:hidden;position:relative;background:#e9f4df;
+      box-shadow:0 14px 34px rgba(47,73,34,.2);isolation:isolate
+    }
+    .postcard-bg{
+      position:absolute;inset:0;background:
+      radial-gradient(circle at 18% 12%,rgba(255,255,255,.9) 0 3%,transparent 4%),
+      radial-gradient(circle at 82% 18%,rgba(255,255,255,.75) 0 2.5%,transparent 3.5%),
+      linear-gradient(160deg,#d8f0c8,#f9f1cf 62%,#f6d6c9);
+      background-size:100% 100%;background-position:center;background-repeat:no-repeat
+    }
+    .postcard-bg.has-photo{background-size:cover;background-position:center}
+    .postcard-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(18,28,15,.72),rgba(0,0,0,.02) 58%)}
+    .postcard-deco{position:absolute;inset:0;pointer-events:none}
+    .postcard-deco:before,.postcard-deco:after{
+      content:"";position:absolute;border-radius:999px;background:rgba(255,255,255,.45);filter:blur(1px)
+    }
+    .postcard-deco:before{width:170px;height:58px;left:-36px;top:48px;transform:rotate(-10deg)}
+    .postcard-deco:after{width:130px;height:44px;right:-30px;top:120px;transform:rotate(13deg)}
+    .postcard-stamp{
+      position:absolute;right:18px;top:18px;width:68px;height:80px;border:3px dashed rgba(255,255,255,.88);
+      color:white;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:900;
+      font-size:11px;line-height:1.2;transform:rotate(4deg);text-shadow:0 1px 4px rgba(0,0,0,.35)
+    }
+    .postcard-content{position:absolute;left:20px;right:20px;bottom:22px;color:white;text-shadow:0 2px 8px rgba(0,0,0,.42)}
+    .postcard-kicker{font-size:12px;font-weight:800;letter-spacing:2px;opacity:.9}
+    .postcard-title{font-size:31px;line-height:1.05;font-weight:950;margin:5px 0 8px}
+    .postcard-message{font-size:15px;line-height:1.5;white-space:pre-wrap}
+    .postcard-place{margin-top:12px;font-size:12px;font-weight:800;display:flex;gap:6px;align-items:center}
+    .postcard-mushrooms{position:absolute;left:18px;top:18px;font-size:29px;letter-spacing:2px;filter:drop-shadow(0 3px 5px rgba(0,0,0,.22))}
+    .theme-sunset .postcard-bg{background:linear-gradient(160deg,#f7b267,#f4845f 48%,#845ec2)}
+    .theme-night .postcard-bg{background:linear-gradient(160deg,#14213d,#274c77 55%,#6096ba)}
+    .theme-flower .postcard-bg{background:linear-gradient(160deg,#f7d6e0,#f2b5d4 48%,#b8e0d2)}
+    .postcard-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .postcard-controls .full{grid-column:1/-1}
+    .file-label{
+      display:flex;align-items:center;justify-content:center;border:1px dashed var(--green);
+      color:var(--green-dark);background:#f3f8ef;border-radius:12px;padding:11px;font-weight:800;cursor:pointer
+    }
+    .file-label input{display:none}
+
     @media (min-width:800px){
       .panel{left:auto;width:420px;right:18px;bottom:18px;border-radius:22px;max-height:82vh}
       .panel.open{transform:translateY(0)}
@@ -126,71 +175,72 @@
   <header>
     <div class="title-row">
       <div>
-        <h1>🍄 皮克敏蘑菇地圖</h1>
-        <div class="subtitle">玩家回報・大型／巨大蘑菇搜尋</div>
+        <h1>🍜 牛肉麵地圖</h1>
+        <div class="subtitle"><span id="cloudStatus">本機模式</span>・特色店家牛肉麵搜尋</div>
       </div>
-      <button class="icon-btn" id="listBtn">清單</button>
+      <div style="display:flex;gap:8px">
+        <button class="icon-btn" id="importPoiBtn">匯入店家</button>
+        <button class="icon-btn" id="settingsBtn">連線</button>
+        <button class="icon-btn" id="postcardBtn">美食卡</button>
+        <button class="icon-btn" id="listBtn">清單</button>
+      </div>
     </div>
   </header>
 
   <div class="toolbar">
     <button class="filter-btn active" data-filter="all">全部</button>
-    <button class="filter-btn" data-filter="small">小型</button>
-    <button class="filter-btn" data-filter="normal">普通</button>
-    <button class="filter-btn" data-filter="large">大型</button>
-    <button class="filter-btn" data-filter="giant">巨大</button>
+    <button class="filter-btn" data-filter="small">清燉</button>
+    <button class="filter-btn" data-filter="normal">紅燒</button>
+    <button class="filter-btn" data-filter="large">番茄</button>
+    <button class="filter-btn" data-filter="giant">麻辣</button>
   </div>
 
   <main class="main">
     <div id="map"></div>
     <div class="status" id="status">正在載入地圖…</div>
     <button class="locate" id="locateBtn" title="定位">◎</button>
-    <button class="fab" id="addBtn" title="新增蘑菇">＋</button>
-    <div class="legend">
-      🟢 小型　🔵 普通<br>
-      🟣 大型　🟡 巨大
-    </div>
+    <button class="fab" id="addBtn" title="新增牛肉麵">＋</button>
+    <div class="legend">🟢 清燉　🔵 紅燒<br>🟣 番茄　🟡 麻辣</div>
   </main>
 </div>
 
 <section class="panel" id="addPanel">
   <div class="handle"></div>
-  <h2>新增蘑菇回報</h2>
+  <h2>新增店家回報</h2>
   <div class="grid">
     <div class="field">
-      <label for="type">大小</label>
+      <label for="type">湯頭</label>
       <select id="type">
-        <option value="small">小型</option>
-        <option value="normal">普通</option>
-        <option value="large">大型</option>
-        <option value="giant">巨大</option>
+        <option value="small">清燉</option>
+        <option value="normal">紅燒</option>
+        <option value="large">番茄</option>
+        <option value="giant">麻辣</option>
       </select>
     </div>
     <div class="field">
-      <label for="color">種類／顏色</label>
+      <label for="color">麵體／特色</label>
       <select id="color">
-        <option>紅色</option><option>黃色</option><option>藍色</option>
-        <option>紫色</option><option>白色</option><option>粉紅色</option>
-        <option>灰色</option><option>水晶</option><option>火焰</option>
-        <option>冰凍</option><option>電氣</option><option>毒氣</option>
-        <option>活動蘑菇</option><option>其他</option>
+        <option>粗麵</option><option>細麵</option><option>家常麵</option>
+        <option>刀削麵</option><option>拉麵</option><option>寬麵</option>
+        <option>牛筋</option><option>半筋半肉</option><option>牛三寶</option>
+        <option>純牛肉</option><option>其他</option>
       </select>
     </div>
     <div class="field full">
-      <label for="name">地點名稱</label>
-      <input id="name" maxlength="40" placeholder="例如：新竹車站前" />
+      <label for="name">店家名稱</label>
+      <input id="name" maxlength="40" placeholder="例如：老王牛肉麵" />
     </div>
     <div class="field">
-      <label for="players">目前人數</label>
-      <input id="players" type="number" min="0" max="20" value="0" />
+      <label for="players">評分（1–5）</label>
+      <input id="players" type="number" min="1" max="5" step="0.1" value="4.5" />
     </div>
     <div class="field">
-      <label for="expires">預估剩餘分鐘</label>
-      <input id="expires" type="number" min="0" max="1440" placeholder="選填" />
+      <label for="expires">平均價格（元）</label>
+      <input id="expires" type="number" min="0" max="2000" placeholder="例如：180" />
     </div>
     <div class="field full">
-      <label for="note">備註</label>
-      <input id="note" maxlength="80" placeholder="例如：尚未開打、缺人" />
+      <label for="note">營業時間／備註</label>
+      <input id="note" maxlength="80" placeholder="例如：11:00–20:30，週一公休" />
     </div>
   </div>
   <div class="actions">
@@ -201,7 +251,7 @@
 
 <section class="panel" id="listPanel">
   <div class="handle"></div>
-  <h2>附近蘑菇</h2>
+  <h2>附近牛肉麵</h2>
   <div class="list" id="mushroomList"></div>
   <div class="actions">
     <button class="btn danger" id="clearAll">清除全部回報</button>
@@ -209,10 +259,136 @@
   </div>
 </section>
 
+
+
+
+<section class="panel" id="poiPanel">
+  <div class="handle"></div>
+  <h2>POI 轉換為牛肉麵店</h2>
+  <div class="connection-box">
+    <div class="connection-help">
+      可匯入你自行整理的 CSV 或 GeoJSON 店家資料，系統會把每個地點轉成牛肉麵店標記。
+      不會直接連線或抓取 Pokémon GO 遊戲資料。
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="poiFile">選擇 CSV／GeoJSON</label>
+    <input id="poiFile" type="file" accept=".csv,.json,.geojson,application/json,text/csv">
+  </div>
+
+  <div class="grid">
+    <div class="field">
+      <label for="poiDefaultType">預設湯頭</label>
+      <select id="poiDefaultType">
+        <option value="normal">紅燒</option>
+        <option value="large">番茄</option>
+        <option value="giant">麻辣</option>
+        <option value="small">清燉</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="poiDefaultColor">預設麵體</label>
+      <select id="poiDefaultColor">
+        <option>家常麵</option><option>粗麵</option><option>細麵</option>
+        <option>刀削麵</option><option>寬麵</option><option>半筋半肉</option>
+        <option>牛三寶</option><option>其他</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="connection-box">
+    <div class="connection-help">
+      CSV 建議欄位：<code>name,lat,lng,type,color,note</code><br>
+      必填欄位：<code>lat</code>、<code>lng</code><br>
+      GeoJSON 支援 Point Feature，名稱可放在 <code>properties.name</code>。
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn secondary" id="closePoi">關閉</button>
+    <button class="btn danger" id="clearPoi">清除匯入點</button>
+    <button class="btn primary" id="importPoi">匯入並顯示</button>
+  </div>
+</section>
+
+<section class="panel" id="settingsPanel">
+  <div class="handle"></div>
+  <h2>共享地圖連線</h2>
+  <div class="connection-box">
+    <div class="connection-state" id="connectionState"><span class="offline-dot"></span>目前使用本機模式</div>
+    <div class="connection-help">填入 Supabase Project URL 與 Publishable／Anon Key 後，所有使用者都會看到相同的店家回報。</div>
+  </div>
+  <div class="field"><label for="supabaseUrl">Supabase Project URL</label><input id="supabaseUrl" placeholder="https://xxxx.supabase.co"></div>
+  <div class="field"><label for="supabaseKey">Publishable／Anon Key</label><input id="supabaseKey" placeholder="sb_publishable_... 或 anon key"></div>
+  <div class="actions">
+    <button class="btn secondary" id="closeSettings">關閉</button>
+    <button class="btn danger" id="disconnectCloud">移除連線</button>
+    <button class="btn primary" id="saveCloud">儲存並連線</button>
+  </div>
+</section>
+
+<section class="panel postcard-panel" id="postcardPanel">
+  <div class="handle"></div>
+  <h2>美食分享卡模式</h2>
+
+  <div class="postcard-stage theme-nature" id="postcardStage">
+    <div class="postcard-bg" id="postcardBg"></div>
+    <div class="postcard-overlay"></div>
+    <div class="postcard-deco"></div>
+    <div class="postcard-mushrooms" id="postcardIcons">🍜🥩✨</div>
+    <div class="postcard-stamp">BEEF<br>NOODLE<br>MAP</div>
+    <div class="postcard-content">
+      <div class="postcard-kicker">BEEF NOODLE JOURNEY</div>
+      <div class="postcard-title" id="postcardTitlePreview">今天吃牛肉麵</div>
+      <div class="postcard-message" id="postcardMessagePreview">記錄今天吃到的好味道，分享你的牛肉麵口袋名單。</div>
+      <div class="postcard-place" id="postcardPlacePreview">📍 牛肉麵地圖</div>
+    </div>
+  </div>
+
+  <div class="postcard-controls">
+    <div class="field">
+      <label for="postcardTheme">版型</label>
+      <select id="postcardTheme">
+        <option value="nature">森林晨光</option>
+        <option value="sunset">夕陽探險</option>
+        <option value="night">星空夜景</option>
+        <option value="flower">花園春日</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="postcardLocation">牛肉麵地點</label>
+      <select id="postcardLocation">
+        <option value="">牛肉麵地圖</option>
+      </select>
+    </div>
+    <div class="field full">
+      <label class="file-label">加入旅途照片
+        <input type="file" id="postcardPhoto" accept="image/*">
+      </label>
+    </div>
+    <div class="field full">
+      <label for="postcardTitle">標題</label>
+      <input id="postcardTitle" maxlength="24" value="今天吃牛肉麵">
+    </div>
+    <div class="field full">
+      <label for="postcardMessage">美食卡文字</label>
+      <input id="postcardMessage" maxlength="80" value="記錄今天吃到的好味道，分享你的牛肉麵口袋名單。">
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn secondary" id="closePostcard">關閉</button>
+    <button class="btn secondary" id="resetPostcard">重設</button>
+    <button class="btn primary" id="exportPostcard">匯出圖片</button>
+  </div>
+</section>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
-  const STORAGE_KEY = "pikminMushroomReports.v1";
+  const STORAGE_KEY = "beefNoodleReports.v1";
   const defaultCenter = [24.8138, 120.9675]; // 新竹市
   const state = {
     userPos: null,
@@ -220,14 +396,18 @@
     filter: "all",
     reports: [],
     markers: [],
-    userMarker: null
+    userMarker: null,
+    cloud: null,
+    realtimeChannel: null,
+    cloudMode: false,
+    importedPoi: []
   };
 
   const typeInfo = {
-    small:  {label:"小型", color:"#53a447", emoji:"🍄", className:"badge-small"},
-    normal: {label:"普通", color:"#3d84d8", emoji:"🍄", className:"badge-normal"},
-    large:  {label:"大型", color:"#7b52b9", emoji:"🍄", className:"badge-large"},
-    giant:  {label:"巨大", color:"#d99a00", emoji:"⭐", className:"badge-giant"}
+    small:  {label:"清燉", color:"#53a447", emoji:"🥣", className:"badge-small"},
+    normal: {label:"紅燒", color:"#3d84d8", emoji:"🍜", className:"badge-normal"},
+    large:  {label:"番茄", color:"#7b52b9", emoji:"🍅", className:"badge-large"},
+    giant:  {label:"麻辣", color:"#d99a00", emoji:"🌶️", className:"badge-giant"}
   };
 
   const map = L.map("map", {zoomControl:false}).setView(defaultCenter, 14);
@@ -251,6 +431,145 @@
 
   function saveReports(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.reports));
+  }
+
+
+  const CLOUD_CONFIG_KEY="beefNoodleCloudConfig.v1";
+
+  const POI_STORAGE_KEY="beefNoodleImportedPoi.v1";
+
+  function loadImportedPoi(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(POI_STORAGE_KEY)||"[]");
+      state.importedPoi=Array.isArray(raw)?raw:[];
+    }catch{state.importedPoi=[];}
+  }
+
+  function saveImportedPoi(){
+    localStorage.setItem(POI_STORAGE_KEY,JSON.stringify(state.importedPoi));
+  }
+
+  function parseCsvLine(line){
+    const out=[];let cur="";let quoted=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){
+        if(quoted && line[i+1]==='"'){cur+='"';i++;}
+        else quoted=!quoted;
+      }else if(c===',' && !quoted){out.push(cur.trim());cur="";}
+      else cur+=c;
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  function parseCsv(text,defaultType,defaultColor){
+    const lines=text.replace(/\r/g,"").split("\n").filter(x=>x.trim());
+    if(lines.length<2) return [];
+    const headers=parseCsvLine(lines[0]).map(h=>h.trim().toLowerCase());
+    return lines.slice(1).map((line,idx)=>{
+      const vals=parseCsvLine(line);
+      const row={};headers.forEach((h,i)=>row[h]=vals[i]??"");
+      const lat=Number(row.lat||row.latitude);
+      const lng=Number(row.lng||row.lon||row.longitude);
+      if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
+      return {
+        id:"poi-"+Date.now()+"-"+idx,
+        type:["small","normal","large","giant"].includes(row.type)?row.type:defaultType,
+        color:row.color||defaultColor,
+        name:row.name||row.title||"匯入店家",
+        players:0,expires:null,note:row.note||"匯入店家資料",
+        lat,lng,createdAt:Date.now(),isPoi:true
+      };
+    }).filter(Boolean);
+  }
+
+  function parseGeoJson(text,defaultType,defaultColor){
+    const data=JSON.parse(text);
+    const features=data.type==="FeatureCollection"?data.features:
+      data.type==="Feature"?[data]:[];
+    return features.map((f,idx)=>{
+      if(!f.geometry||f.geometry.type!=="Point")return null;
+      const [lng,lat]=f.geometry.coordinates||[];
+      if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lng)))return null;
+      const p=f.properties||{};
+      return {
+        id:"poi-"+Date.now()+"-"+idx,
+        type:["small","normal","large","giant"].includes(p.type)?p.type:defaultType,
+        color:p.color||defaultColor,
+        name:p.name||p.title||"匯入店家",
+        players:0,expires:null,note:p.note||"匯入店家資料",
+        lat:Number(lat),lng:Number(lng),createdAt:Date.now(),isPoi:true
+      };
+    }).filter(Boolean);
+  }
+
+
+  function getCloudConfig(){
+    try{return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY)||"{}")}catch{return {}}
+  }
+
+  function setCloudState(connected,message){
+    state.cloudMode=connected;
+    $("cloudStatus").textContent=connected?"即時共享":"本機模式";
+    $("connectionState").innerHTML=connected
+      ? `<span class="online-dot"></span>${escapeHtml(message||"已連接共享資料庫")}`
+      : `<span class="offline-dot"></span>${escapeHtml(message||"目前使用本機模式")}`;
+  }
+
+  function sanitizeReport(r){
+    return {
+      id:String(r.id), type:r.type||"normal", color:r.color||"其他",
+      name:r.name||"", players:Number(r.rating ?? r.players ?? 0),
+      expires:r.average_price ?? r.expires ?? null, note:r.note||"",
+      lat:Number(r.lat), lng:Number(r.lng),
+      createdAt:new Date(r.created_at||r.createdAt||Date.now()).getTime(),
+      expiresAt:r.expires_at ? new Date(r.expires_at).getTime() : null
+    };
+  }
+
+  function activeOnly(reports){
+    return reports;
+  }
+
+  async function fetchCloudReports(){
+    if(!state.cloudMode || !state.cloud)return;
+    const {data,error}=await state.cloud.from("beef_noodle_shops")
+      .select("*").order("created_at",{ascending:false}).limit(500);
+    if(!error){state.reports=activeOnly((data||[]).map(sanitizeReport));render();}
+  }
+
+  async function connectCloud(){
+    const config=getCloudConfig();
+    if(!config.url || !config.key || !window.supabase){setCloudState(false);return false;}
+    try{
+      state.cloud=window.supabase.createClient(config.url,config.key);
+      const {data,error}=await state.cloud.from("beef_noodle_shops")
+        .select("*").order("created_at",{ascending:false}).limit(500);
+      if(error)throw error;
+      state.reports=activeOnly((data||[]).map(sanitizeReport));
+      setCloudState(true,"已連接即時共享地圖");
+      render();
+      state.realtimeChannel=state.cloud.channel("beef-noodle-map-changes")
+        .on("postgres_changes",{event:"*",schema:"public",table:"beef_noodle_shops"},fetchCloudReports)
+        .subscribe();
+      return true;
+    }catch(err){
+      console.error(err);setCloudState(false,"連線失敗："+(err.message||"請檢查設定"));
+      loadReports();render();return false;
+    }
+  }
+
+  async function addReport(report){
+    if(!state.cloudMode || !state.cloud){
+      state.reports.push(report);saveReports();return;
+    }
+    const {error}=await state.cloud.from("beef_noodle_shops").insert({
+      type:report.type,color:report.color,name:report.name,rating:report.players,
+      average_price:report.expires,note:report.note,lat:report.lat,lng:report.lng
+    });
+    if(error)throw error;
+    await fetchCloudReports();
   }
 
   function escapeHtml(s=""){
@@ -287,20 +606,22 @@
   function render(){
     state.markers.forEach(m=>map.removeLayer(m));
     state.markers=[];
-    const visible = state.reports.filter(r => state.filter==="all" || r.type===state.filter);
+    state.reports=activeOnly(state.reports);
+    const allItems=[...state.reports,...state.importedPoi];
+    const visible = allItems.filter(r => state.filter==="all" || r.type===state.filter);
 
     visible.forEach(r=>{
       const info=typeInfo[r.type] || typeInfo.normal;
       const marker=L.marker([r.lat,r.lng],{icon:makeIcon(r.type)}).addTo(map);
-      const mins = r.expires ? `<div>⏳ 回報時預估剩餘 ${escapeHtml(r.expires)} 分鐘</div>` : "";
+      const mins = r.expires ? `<div>💰 平均價格 NT$${escapeHtml(r.expires)}</div>` : "";
       const note = r.note ? `<div>📝 ${escapeHtml(r.note)}</div>` : "";
       marker.bindPopup(`
         <div class="popup-title">${info.emoji} ${info.label}・${escapeHtml(r.color)}</div>
         <div class="popup-meta">
-          <div>📍 ${escapeHtml(r.name || "未命名地點")}</div>
-          <div>👥 ${escapeHtml(r.players || 0)} 人</div>
+          <div>📍 ${escapeHtml(r.name || "未命名店家")}</div>
+          <div>⭐ ${escapeHtml(r.players || 0)} 分</div>
           ${mins}${note}
-          <div>🕒 ${formatTime(r.createdAt)}</div>
+          <div>🕒 更新於 ${formatTime(r.createdAt)}</div>
         </div>
         <div class="popup-actions">
           <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}','_blank')">導航</button>
@@ -309,13 +630,13 @@
       state.markers.push(marker);
     });
 
-    status.textContent = `目前顯示 ${visible.length} 個蘑菇回報`;
+    status.textContent = `目前顯示 ${visible.length} 個店家回報`;
     renderList();
   }
 
   function renderList(){
     const list=$("mushroomList");
-    let reports=[...state.reports].filter(r=>state.filter==="all"||r.type===state.filter);
+    let reports=[...state.reports,...state.importedPoi].filter(r=>state.filter==="all"||r.type===state.filter);
     if(state.userPos){
       reports=reports.map(r=>({...r,dist:distanceKm(state.userPos,[r.lat,r.lng])}))
                      .sort((a,b)=>a.dist-b.dist);
@@ -323,7 +644,7 @@
       reports.sort((a,b)=>b.createdAt-a.createdAt);
     }
     if(!reports.length){
-      list.innerHTML='<div class="empty">目前沒有符合條件的蘑菇回報</div>';
+      list.innerHTML='<div class="empty">目前沒有符合條件的店家回報</div>';
       return;
     }
     list.innerHTML=reports.map(r=>{
@@ -333,7 +654,7 @@
         <div class="mushroom-badge ${info.className}">${info.emoji}</div>
         <div>
           <div class="item-title">${info.label}・${escapeHtml(r.color)}</div>
-          <div class="item-meta">${escapeHtml(r.name||"未命名地點")}｜${dist}｜${formatTime(r.createdAt)}</div>
+          <div class="item-meta">${escapeHtml(r.name||"未命名店家")}｜${dist}｜${formatTime(r.createdAt)}</div>
         </div>
         <button class="filter-btn" onclick="window.focusReport('${r.id}')">查看</button>
       </div>`;
@@ -378,7 +699,7 @@
     openPanel($("addPanel"));
   });
 
-  $("saveAdd").addEventListener("click",()=>{
+  $("saveAdd").addEventListener("click",async()=>{
     const pos=state.selectedPos || map.getCenter();
     const report={
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
@@ -392,14 +713,16 @@
       lng:pos.lng ?? pos[1],
       createdAt:Date.now()
     };
-    state.reports.push(report);
-    saveReports();
-    render();
-    closePanels();
+    const saveBtn=$("saveAdd");
+    saveBtn.disabled=true;saveBtn.textContent=state.cloudMode?"上傳中…":"儲存中…";
+    try{
+      await addReport(report);render();closePanels();
+      status.textContent=state.cloudMode?"店家已分享到共享地圖":"店家回報已儲存在本機";
+    }catch(err){alert("儲存失敗："+(err.message||"未知錯誤"));}
+    finally{saveBtn.disabled=false;saveBtn.textContent="儲存回報";}
     $("name").value="";
     $("note").value="";
     $("expires").value="";
-    status.textContent="蘑菇回報已儲存";
   });
 
   $("cancelAdd").addEventListener("click",closePanels);
@@ -408,7 +731,7 @@
   $("locateBtn").addEventListener("click",locateUser);
 
   $("clearAll").addEventListener("click",()=>{
-    if(confirm("確定要清除這台裝置上的全部蘑菇回報嗎？")){
+    if(confirm("確定要清除這台裝置上的全部店家回報嗎？")){
       state.reports=[];
       saveReports();
       render();
@@ -426,8 +749,13 @@
   });
 
   window.deleteReport=id=>{
+    if(String(id).startsWith("poi-")){
+      state.importedPoi=state.importedPoi.filter(r=>r.id!==id);
+      saveImportedPoi();render();map.closePopup();return;
+    }
+    if(state.cloudMode){alert("共享模式不開放直接刪除；回報會在有效期限後自動消失。");return;}
     state.reports=state.reports.filter(r=>r.id!==id);
-    saveReports(); render(); map.closePopup();
+    saveReports();render();map.closePopup();
   };
 
   window.focusReport=id=>{
@@ -442,9 +770,136 @@
     if(marker) marker.openPopup();
   };
 
+
+
+
+  $("importPoiBtn").addEventListener("click",()=>openPanel($("poiPanel")));
+  $("closePoi").addEventListener("click",closePanels);
+  $("clearPoi").addEventListener("click",()=>{
+    if(confirm("確定清除所有匯入的 POI 牛肉麵嗎？")){
+      state.importedPoi=[];saveImportedPoi();render();closePanels();
+    }
+  });
+  $("importPoi").addEventListener("click",async()=>{
+    const file=$("poiFile").files?.[0];
+    if(!file){alert("請先選擇 CSV 或 GeoJSON 檔案。");return;}
+    const text=await file.text();
+    const type=$("poiDefaultType").value;
+    const color=$("poiDefaultColor").value;
+    try{
+      let items=[];
+      if(file.name.toLowerCase().endsWith(".csv")) items=parseCsv(text,type,color);
+      else items=parseGeoJson(text,type,color);
+      if(!items.length){alert("沒有找到有效的座標資料。");return;}
+      state.importedPoi.push(...items);
+      saveImportedPoi();render();closePanels();
+      const group=L.featureGroup(items.map(x=>L.marker([x.lat,x.lng])));
+      map.fitBounds(group.getBounds().pad(0.15));
+      status.textContent=`已匯入 ${items.length} 個 POI 牛肉麵`;
+    }catch(err){
+      alert("匯入失敗："+(err.message||"檔案格式錯誤"));
+    }
+  });
+
+  $("settingsBtn").addEventListener("click",()=>{
+    const c=getCloudConfig();$("supabaseUrl").value=c.url||"";$("supabaseKey").value=c.key||"";
+    openPanel($("settingsPanel"));
+  });
+  $("closeSettings").addEventListener("click",closePanels);
+  $("saveCloud").addEventListener("click",async()=>{
+    const url=$("supabaseUrl").value.trim().replace(/\/$/,"");
+    const key=$("supabaseKey").value.trim();
+    if(!/^https:\/\/.+\.supabase\.co$/.test(url)||!key){alert("請輸入正確的 Supabase URL 與 Key。");return;}
+    localStorage.setItem(CLOUD_CONFIG_KEY,JSON.stringify({url,key}));
+    const ok=await connectCloud();if(ok){closePanels();status.textContent="共享牛肉麵地圖已連線";}
+  });
+  $("disconnectCloud").addEventListener("click",async()=>{
+    localStorage.removeItem(CLOUD_CONFIG_KEY);
+    if(state.realtimeChannel&&state.cloud)await state.cloud.removeChannel(state.realtimeChannel);
+    state.cloud=null;state.realtimeChannel=null;state.cloudMode=false;
+    loadReports();render();setCloudState(false);closePanels();
+  });
+
+  function refreshPostcardLocations(){
+    const select=$("postcardLocation");
+    const current=select.value;
+    select.innerHTML='<option value="">牛肉麵地圖</option>'+
+      state.reports.map(r=>`<option value="${r.id}">${escapeHtml(r.name||"未命名店家")}・${typeInfo[r.type]?.label||"牛肉麵"}</option>`).join("");
+    if([...select.options].some(o=>o.value===current)) select.value=current;
+  }
+
+  function updatePostcard(){
+    const stage=$("postcardStage");
+    stage.className="postcard-stage theme-"+$("postcardTheme").value;
+    $("postcardTitlePreview").textContent=$("postcardTitle").value.trim()||"今天吃牛肉麵";
+    $("postcardMessagePreview").textContent=$("postcardMessage").value.trim()||"記錄今天吃到的好味道，分享你的牛肉麵口袋名單。";
+    const report=state.reports.find(r=>r.id===$("postcardLocation").value);
+    if(report){
+      const info=typeInfo[report.type]||typeInfo.normal;
+      $("postcardPlacePreview").textContent=`📍 ${report.name||"未命名店家"}・${info.label}${report.color||""}牛肉麵`;
+      $("postcardIcons").textContent=report.type==="giant"?"🌶️🍜✨":report.type==="large"?"🍅🍜✨":"🍜🥩✨";
+    }else{
+      $("postcardPlacePreview").textContent="📍 牛肉麵地圖";
+      $("postcardIcons").textContent="🍜🥩✨";
+    }
+  }
+
+  $("postcardBtn").addEventListener("click",()=>{
+    refreshPostcardLocations();
+    updatePostcard();
+    openPanel($("postcardPanel"));
+  });
+  $("closePostcard").addEventListener("click",closePanels);
+  ["postcardTheme","postcardLocation","postcardTitle","postcardMessage"].forEach(id=>{
+    $(id).addEventListener("input",updatePostcard);
+    $(id).addEventListener("change",updatePostcard);
+  });
+  $("postcardPhoto").addEventListener("change",e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      $("postcardBg").style.backgroundImage=`url("${reader.result}")`;
+      $("postcardBg").classList.add("has-photo");
+    };
+    reader.readAsDataURL(file);
+  });
+  $("resetPostcard").addEventListener("click",()=>{
+    $("postcardTheme").value="nature";
+    $("postcardLocation").value="";
+    $("postcardTitle").value="今天吃牛肉麵";
+    $("postcardMessage").value="記錄今天吃到的好味道，分享你的牛肉麵口袋名單。";
+    $("postcardPhoto").value="";
+    $("postcardBg").style.backgroundImage="";
+    $("postcardBg").classList.remove("has-photo");
+    updatePostcard();
+  });
+  $("exportPostcard").addEventListener("click",async()=>{
+    const btn=$("exportPostcard");
+    const old=btn.textContent;
+    btn.textContent="製作中…";
+    btn.disabled=true;
+    try{
+      const canvas=await html2canvas($("postcardStage"),{scale:3,useCORS:true,backgroundColor:null});
+      const link=document.createElement("a");
+      link.download=`beef-noodle-card-${new Date().toISOString().slice(0,10)}.png`;
+      link.href=canvas.toDataURL("image/png");
+      link.click();
+    }catch(e){
+      alert("美食卡匯出失敗，請改用瀏覽器截圖。");
+    }finally{
+      btn.textContent=old;
+      btn.disabled=false;
+    }
+  });
+
   loadReports();
+  loadImportedPoi();
   render();
+  refreshPostcardLocations();
+  connectCloud();
   locateUser();
+  setInterval(()=>{if(state.cloudMode)fetchCloudReports();},60000);
 })();
 </script>
 </body>
