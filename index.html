@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#5e9f3a" />
+  <title>皮克敏蘑菇地圖</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    :root{
+      --green:#5e9f3a;
+      --green-dark:#3d7224;
+      --cream:#fffaf0;
+      --card:#ffffff;
+      --text:#24301e;
+      --muted:#6e7869;
+      --border:#dfe8d9;
+      --danger:#d84a4a;
+      --gold:#d99a00;
+      --purple:#7b52b9;
+      --shadow:0 8px 24px rgba(44,72,28,.14);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--cream);color:var(--text)}
+    body{overflow:hidden}
+    button,input,select{font:inherit}
+    .app{height:100%;display:flex;flex-direction:column}
+    header{
+      padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+      background:linear-gradient(135deg,#6baa43,#4d892d);
+      color:white;box-shadow:0 2px 12px rgba(0,0,0,.16);z-index:1001
+    }
+    .title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.5px}
+    .subtitle{font-size:12px;opacity:.9;margin-top:2px}
+    .icon-btn{
+      border:0;background:rgba(255,255,255,.2);color:white;border-radius:12px;
+      min-width:42px;height:42px;padding:0 12px;font-weight:700
+    }
+    .toolbar{
+      display:flex;gap:8px;padding:10px;background:var(--cream);
+      border-bottom:1px solid var(--border);overflow-x:auto;z-index:1000
+    }
+    .filter-btn{
+      border:1px solid var(--border);background:white;color:var(--text);
+      border-radius:999px;padding:8px 12px;white-space:nowrap;font-weight:700
+    }
+    .filter-btn.active{background:var(--green);border-color:var(--green);color:white}
+    .main{position:relative;flex:1;min-height:0}
+    #map{width:100%;height:100%}
+    .status{
+      position:absolute;top:12px;left:50%;transform:translateX(-50%);
+      background:rgba(255,255,255,.94);border:1px solid var(--border);
+      border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;
+      box-shadow:var(--shadow);z-index:900;max-width:88%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+    }
+    .fab{
+      position:absolute;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));
+      width:58px;height:58px;border-radius:50%;border:0;background:var(--green);
+      color:white;font-size:30px;box-shadow:0 10px 28px rgba(62,112,35,.35);z-index:900
+    }
+    .locate{
+      position:absolute;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));
+      width:48px;height:48px;border-radius:15px;border:1px solid var(--border);
+      background:white;font-size:21px;box-shadow:var(--shadow);z-index:900
+    }
+    .panel{
+      position:fixed;inset:auto 0 0 0;background:var(--card);
+      border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.2);
+      z-index:2000;transform:translateY(105%);transition:.25s ease;
+      max-height:88vh;overflow:auto;padding:12px 16px calc(20px + env(safe-area-inset-bottom))
+    }
+    .panel.open{transform:translateY(0)}
+    .handle{width:44px;height:5px;background:#d6ddd2;border-radius:99px;margin:0 auto 12px}
+    .panel h2{margin:0 0 12px;font-size:20px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .field.full{grid-column:1/-1}
+    label{font-size:13px;font-weight:800}
+    input,select{
+      width:100%;border:1px solid var(--border);border-radius:12px;padding:11px 12px;background:white;color:var(--text)
+    }
+    .actions{display:flex;gap:10px;margin-top:12px}
+    .btn{flex:1;border:0;border-radius:13px;padding:12px;font-weight:800}
+    .btn.primary{background:var(--green);color:white}
+    .btn.secondary{background:#edf3e9;color:var(--green-dark)}
+    .btn.danger{background:#fff0f0;color:var(--danger)}
+    .list{display:flex;flex-direction:column;gap:9px}
+    .item{
+      border:1px solid var(--border);border-radius:14px;padding:12px;background:white;
+      display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center
+    }
+    .mushroom-badge{
+      width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px
+    }
+    .badge-small{background:#edf7ea}
+    .badge-normal{background:#e8f2ff}
+    .badge-large{background:#f1eaff}
+    .badge-giant{background:#fff3c8}
+    .item-title{font-weight:800}
+    .item-meta{font-size:12px;color:var(--muted);margin-top:3px}
+    .empty{text-align:center;color:var(--muted);padding:28px 10px}
+    .leaflet-popup-content-wrapper{border-radius:16px}
+    .popup-title{font-weight:800;font-size:15px;margin-bottom:4px}
+    .popup-meta{font-size:12px;color:#667060;line-height:1.5}
+    .popup-actions{display:flex;gap:6px;margin-top:8px}
+    .popup-actions button{border:0;border-radius:9px;padding:7px 9px;font-weight:700}
+    .legend{
+      position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));
+      background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:13px;
+      padding:8px 10px;font-size:11px;line-height:1.6;box-shadow:var(--shadow);z-index:850
+    }
+    @media (min-width:800px){
+      .panel{left:auto;width:420px;right:18px;bottom:18px;border-radius:22px;max-height:82vh}
+      .panel.open{transform:translateY(0)}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title-row">
+      <div>
+        <h1>🍄 皮克敏蘑菇地圖</h1>
+        <div class="subtitle">玩家回報・大型／巨大蘑菇搜尋</div>
+      </div>
+      <button class="icon-btn" id="listBtn">清單</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button class="filter-btn active" data-filter="all">全部</button>
+    <button class="filter-btn" data-filter="small">小型</button>
+    <button class="filter-btn" data-filter="normal">普通</button>
+    <button class="filter-btn" data-filter="large">大型</button>
+    <button class="filter-btn" data-filter="giant">巨大</button>
+  </div>
+
+  <main class="main">
+    <div id="map"></div>
+    <div class="status" id="status">正在載入地圖…</div>
+    <button class="locate" id="locateBtn" title="定位">◎</button>
+    <button class="fab" id="addBtn" title="新增蘑菇">＋</button>
+    <div class="legend">
+      🟢 小型　🔵 普通<br>
+      🟣 大型　🟡 巨大
+    </div>
+  </main>
+</div>
+
+<section class="panel" id="addPanel">
+  <div class="handle"></div>
+  <h2>新增蘑菇回報</h2>
+  <div class="grid">
+    <div class="field">
+      <label for="type">大小</label>
+      <select id="type">
+        <option value="small">小型</option>
+        <option value="normal">普通</option>
+        <option value="large">大型</option>
+        <option value="giant">巨大</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="color">種類／顏色</label>
+      <select id="color">
+        <option>紅色</option><option>黃色</option><option>藍色</option>
+        <option>紫色</option><option>白色</option><option>粉紅色</option>
+        <option>灰色</option><option>水晶</option><option>火焰</option>
+        <option>冰凍</option><option>電氣</option><option>毒氣</option>
+        <option>活動蘑菇</option><option>其他</option>
+      </select>
+    </div>
+    <div class="field full">
+      <label for="name">地點名稱</label>
+      <input id="name" maxlength="40" placeholder="例如：新竹車站前" />
+    </div>
+    <div class="field">
+      <label for="players">目前人數</label>
+      <input id="players" type="number" min="0" max="20" value="0" />
+    </div>
+    <div class="field">
+      <label for="expires">預估剩餘分鐘</label>
+      <input id="expires" type="number" min="0" max="1440" placeholder="選填" />
+    </div>
+    <div class="field full">
+      <label for="note">備註</label>
+      <input id="note" maxlength="80" placeholder="例如：尚未開打、缺人" />
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn secondary" id="cancelAdd">取消</button>
+    <button class="btn primary" id="saveAdd">儲存回報</button>
+  </div>
+</section>
+
+<section class="panel" id="listPanel">
+  <div class="handle"></div>
+  <h2>附近蘑菇</h2>
+  <div class="list" id="mushroomList"></div>
+  <div class="actions">
+    <button class="btn danger" id="clearAll">清除全部回報</button>
+    <button class="btn secondary" id="closeList">關閉</button>
+  </div>
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(() => {
+  const STORAGE_KEY = "pikminMushroomReports.v1";
+  const defaultCenter = [24.8138, 120.9675]; // 新竹市
+  const state = {
+    userPos: null,
+    selectedPos: null,
+    filter: "all",
+    reports: [],
+    markers: [],
+    userMarker: null
+  };
+
+  const typeInfo = {
+    small:  {label:"小型", color:"#53a447", emoji:"🍄", className:"badge-small"},
+    normal: {label:"普通", color:"#3d84d8", emoji:"🍄", className:"badge-normal"},
+    large:  {label:"大型", color:"#7b52b9", emoji:"🍄", className:"badge-large"},
+    giant:  {label:"巨大", color:"#d99a00", emoji:"⭐", className:"badge-giant"}
+  };
+
+  const map = L.map("map", {zoomControl:false}).setView(defaultCenter, 14);
+  L.control.zoom({position:"bottomright"}).addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom:19,
+    attribution:'&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const $ = id => document.getElementById(id);
+  const status = $("status");
+
+  function loadReports(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      state.reports = Array.isArray(raw) ? raw : [];
+    }catch{
+      state.reports = [];
+    }
+  }
+
+  function saveReports(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.reports));
+  }
+
+  function escapeHtml(s=""){
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
+  }
+
+  function formatTime(ts){
+    return new Date(ts).toLocaleString("zh-TW", {month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  }
+
+  function distanceKm(a,b){
+    const R=6371, toRad=x=>x*Math.PI/180;
+    const dLat=toRad(b[0]-a[0]), dLon=toRad(b[1]-a[1]);
+    const lat1=toRad(a[0]), lat2=toRad(b[0]);
+    const h=Math.sin(dLat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+
+  function makeIcon(type){
+    const info=typeInfo[type];
+    return L.divIcon({
+      className:"",
+      html:`<div style="
+        width:38px;height:38px;border-radius:50% 50% 50% 8px;
+        transform:rotate(-45deg);background:${info.color};
+        border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,.28);
+        display:flex;align-items:center;justify-content:center">
+        <span style="transform:rotate(45deg);font-size:19px">${info.emoji}</span>
+      </div>`,
+      iconSize:[38,38], iconAnchor:[19,38], popupAnchor:[0,-34]
+    });
+  }
+
+  function render(){
+    state.markers.forEach(m=>map.removeLayer(m));
+    state.markers=[];
+    const visible = state.reports.filter(r => state.filter==="all" || r.type===state.filter);
+
+    visible.forEach(r=>{
+      const info=typeInfo[r.type] || typeInfo.normal;
+      const marker=L.marker([r.lat,r.lng],{icon:makeIcon(r.type)}).addTo(map);
+      const mins = r.expires ? `<div>⏳ 回報時預估剩餘 ${escapeHtml(r.expires)} 分鐘</div>` : "";
+      const note = r.note ? `<div>📝 ${escapeHtml(r.note)}</div>` : "";
+      marker.bindPopup(`
+        <div class="popup-title">${info.emoji} ${info.label}・${escapeHtml(r.color)}</div>
+        <div class="popup-meta">
+          <div>📍 ${escapeHtml(r.name || "未命名地點")}</div>
+          <div>👥 ${escapeHtml(r.players || 0)} 人</div>
+          ${mins}${note}
+          <div>🕒 ${formatTime(r.createdAt)}</div>
+        </div>
+        <div class="popup-actions">
+          <button onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}','_blank')">導航</button>
+          <button onclick="window.deleteReport('${r.id}')">刪除</button>
+        </div>`);
+      state.markers.push(marker);
+    });
+
+    status.textContent = `目前顯示 ${visible.length} 個蘑菇回報`;
+    renderList();
+  }
+
+  function renderList(){
+    const list=$("mushroomList");
+    let reports=[...state.reports].filter(r=>state.filter==="all"||r.type===state.filter);
+    if(state.userPos){
+      reports=reports.map(r=>({...r,dist:distanceKm(state.userPos,[r.lat,r.lng])}))
+                     .sort((a,b)=>a.dist-b.dist);
+    }else{
+      reports.sort((a,b)=>b.createdAt-a.createdAt);
+    }
+    if(!reports.length){
+      list.innerHTML='<div class="empty">目前沒有符合條件的蘑菇回報</div>';
+      return;
+    }
+    list.innerHTML=reports.map(r=>{
+      const info=typeInfo[r.type]||typeInfo.normal;
+      const dist=typeof r.dist==="number" ? `${r.dist<1?Math.round(r.dist*1000)+" m":r.dist.toFixed(1)+" km"}` : "尚未定位";
+      return `<div class="item" data-id="${r.id}">
+        <div class="mushroom-badge ${info.className}">${info.emoji}</div>
+        <div>
+          <div class="item-title">${info.label}・${escapeHtml(r.color)}</div>
+          <div class="item-meta">${escapeHtml(r.name||"未命名地點")}｜${dist}｜${formatTime(r.createdAt)}</div>
+        </div>
+        <button class="filter-btn" onclick="window.focusReport('${r.id}')">查看</button>
+      </div>`;
+    }).join("");
+  }
+
+  function locateUser(){
+    if(!navigator.geolocation){
+      status.textContent="此裝置不支援定位";
+      return;
+    }
+    status.textContent="正在取得目前位置…";
+    navigator.geolocation.getCurrentPosition(pos=>{
+      state.userPos=[pos.coords.latitude,pos.coords.longitude];
+      map.setView(state.userPos,16);
+      if(state.userMarker) map.removeLayer(state.userMarker);
+      state.userMarker=L.circleMarker(state.userPos,{
+        radius:9,color:"#ffffff",weight:3,fillColor:"#3279d8",fillOpacity:1
+      }).addTo(map).bindPopup("你目前的位置");
+      status.textContent=`定位完成，精度約 ${Math.round(pos.coords.accuracy)} 公尺`;
+      renderList();
+    },err=>{
+      status.textContent="無法取得定位，請允許瀏覽器位置權限";
+    },{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+  }
+
+  function openPanel(panel){
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("open"));
+    panel.classList.add("open");
+  }
+  function closePanels(){
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("open"));
+  }
+
+  $("addBtn").addEventListener("click",()=>{
+    state.selectedPos = map.getCenter();
+    openPanel($("addPanel"));
+  });
+
+  map.on("contextmenu", e=>{
+    state.selectedPos=e.latlng;
+    openPanel($("addPanel"));
+  });
+
+  $("saveAdd").addEventListener("click",()=>{
+    const pos=state.selectedPos || map.getCenter();
+    const report={
+      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      type:$("type").value,
+      color:$("color").value,
+      name:$("name").value.trim(),
+      players:Number($("players").value||0),
+      expires:$("expires").value ? Number($("expires").value) : null,
+      note:$("note").value.trim(),
+      lat:pos.lat ?? pos[0],
+      lng:pos.lng ?? pos[1],
+      createdAt:Date.now()
+    };
+    state.reports.push(report);
+    saveReports();
+    render();
+    closePanels();
+    $("name").value="";
+    $("note").value="";
+    $("expires").value="";
+    status.textContent="蘑菇回報已儲存";
+  });
+
+  $("cancelAdd").addEventListener("click",closePanels);
+  $("closeList").addEventListener("click",closePanels);
+  $("listBtn").addEventListener("click",()=>{renderList();openPanel($("listPanel"));});
+  $("locateBtn").addEventListener("click",locateUser);
+
+  $("clearAll").addEventListener("click",()=>{
+    if(confirm("確定要清除這台裝置上的全部蘑菇回報嗎？")){
+      state.reports=[];
+      saveReports();
+      render();
+      closePanels();
+    }
+  });
+
+  document.querySelectorAll(".filter-btn[data-filter]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      document.querySelectorAll(".filter-btn[data-filter]").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      state.filter=btn.dataset.filter;
+      render();
+    });
+  });
+
+  window.deleteReport=id=>{
+    state.reports=state.reports.filter(r=>r.id!==id);
+    saveReports(); render(); map.closePopup();
+  };
+
+  window.focusReport=id=>{
+    const r=state.reports.find(x=>x.id===id);
+    if(!r)return;
+    closePanels();
+    map.setView([r.lat,r.lng],17);
+    const marker=state.markers.find(m=>{
+      const ll=m.getLatLng();
+      return Math.abs(ll.lat-r.lat)<1e-8 && Math.abs(ll.lng-r.lng)<1e-8;
+    });
+    if(marker) marker.openPopup();
+  };
+
+  loadReports();
+  render();
+  locateUser();
+})();
+</script>
+</body>
+</html>
